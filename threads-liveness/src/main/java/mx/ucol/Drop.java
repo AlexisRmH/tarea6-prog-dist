@@ -1,11 +1,13 @@
 package mx.ucol;
 
+import java.lang.reflect.Array;
+
 public class Drop {
+    private String[] buffer = new String[10];
     private String message;
-    private boolean empty = true;
 
     public synchronized String take() {
-        while (empty) {
+        while (isEmpty()) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -13,21 +15,44 @@ public class Drop {
             }
         }
 
-        empty = true;
-        notifyAll();
+        for (int i = 0; i < 10; i++){
+            if (buffer[i] != null){
+                this.message = buffer[i];
+                buffer[i] = null;
+                break;
+            }
+        }
 
-        return message;
+        notifyAll();
+        return this.message;
+
     }
 
     public synchronized void put(String message) {
-        while (!empty) {
+        while (!isEmpty()) {
             try {
                 wait();
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+
+            }
         }
 
-        empty = false;
-        this.message = message;
+        for (int i = 0; i < 10; i++){
+            if (buffer[i] == null){
+                buffer[i] = message;
+                break;
+            }
+        }
+
         notifyAll();
+    }
+
+    public boolean isEmpty() {
+        for (int i = 0; i < 10; i++) {
+            if(buffer[i] != null) {
+                return false;
+            }
+        }
+        return true;
     }
 }
